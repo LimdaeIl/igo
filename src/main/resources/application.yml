@@ -1,0 +1,12 @@
+server:
+  port: 10000
+
+spring:
+  application:
+    name: igo-app
+
+  config:
+    import: optional:file:.env[.properties]
+
+  profiles:
+    active: dev
