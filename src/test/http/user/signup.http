@@ -1,0 +1,20 @@
+### 회원가입 성공
+POST http://localhost:10000/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "test1234!",
+  "nickname": "test"
+}
+
+### 회원가입 성공
+POST http://localhost:10000/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email": "testtest.com",
+  "password": "test12",
+  "nickname": "test"
+}
+
