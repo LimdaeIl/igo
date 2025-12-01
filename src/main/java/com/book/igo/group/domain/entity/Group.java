@@ -1,5 +1,6 @@
 package com.book.igo.group.domain.entity;
 
+import com.book.igo.common.domain.BaseTimeEntity;
 import com.book.igo.user.domain.entity.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -23,7 +24,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "v1_groups")
 @Entity
-public class Group {
+public class Group extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +37,7 @@ public class Group {
     @Column(name = "location", nullable = false, length = 100)
     private String location;
 
-    @Column(name = "locationDetail", length = 255)
+    @Column(name = "location_detail", length = 255)
     private String locationDetail;
 
     @Column(name = "start_time", nullable = false)
@@ -66,4 +67,39 @@ public class Group {
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupUser> users = new ArrayList<>();
+
+    public static Group create(
+            String title,
+            String location,
+            String locationDetail,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String description,
+            Integer maxParticipants,
+            User host
+    ) {
+        Group group = new Group();
+        group.title = title;
+        group.location = location;
+        group.locationDetail = locationDetail;
+        group.startTime = startTime;
+        group.endTime = endTime;
+        group.description = description;
+        group.maxParticipants = maxParticipants;
+        group.host = host;
+        return group;
+    }
+
+    // 연관관계 편의 메서드들
+    public void addImage(GroupImage image) {
+        this.images.add(image);
+    }
+
+    public void addUser(GroupUser groupUser) {
+        this.users.add(groupUser);
+    }
+
+    public void addTag(GroupTag groupTag) {
+        this.groupTags.add(groupTag);
+    }
 }

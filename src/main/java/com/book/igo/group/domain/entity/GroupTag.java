@@ -34,4 +34,11 @@ public class GroupTag extends BaseTimeEntity {
     @JoinColumn(name = "tag_id", nullable = false)
     private Tag tag;
 
+    public static GroupTag create(Group group, Tag tag) {
+        GroupTag groupTag = new GroupTag();
+        groupTag.group = group;
+        groupTag.tag = tag;
+        group.addTag(groupTag);
+        return groupTag;
+    }
 }

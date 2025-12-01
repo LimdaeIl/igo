@@ -63,3 +63,11 @@ management:
   endpoint:
     health:
       show-details: always
+
+aws:
+  s3:
+    bucket: bucket-codeit-igo
+    region: ap-northeast-2
+    public-base-url: https://bucket-codeit-igo.s3.ap-northeast-2.amazonaws.com
+    access-key-id: ${AWS_ACCESS_KEY_ID}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY}
