@@ -1,0 +1,75 @@
+### 회원가입 성공
+POST http://localhost:10000/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "test1234!",
+  "nickname": "test"
+}
+
+### 로그인 성공
+POST http://localhost:10000/api/v1/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "test1234!"
+}
+
+> {%
+  client.global.set("userId", response.body.data.userId);
+  client.global.set("accessToken", response.body.data.accessToken);
+  client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### 모임 생성 (이미지 업로드 포함)
+POST http://localhost:10000/api/v1/groups
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="request"
+Content-Type: application/json; charset=UTF-8
+
+{
+  "title": "강남에서 하는 자바 스터디",
+  "location": "서울 강남구",
+  "locationDetail": "강남역 2번 출구 근처 카페",
+  "startTime": "2025-12-10T19:00:00",
+  "endTime": "2025-12-10T21:00:00",
+  "tags": [
+    "자바",
+    "백엔드",
+    "스터디"
+  ],
+  "description": "자바 백엔드 신입 준비하는 분들을 위한 스터디입니다.",
+  "maxParticipants": 10
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="images"; filename="main.jpg"
+Content-Type: image/jpeg
+
+< ./http-files/main.jpg
+--WebAppBoundary
+Content-Disposition: form-data; name="images"; filename="sub_1.jpg"
+Content-Type: image/jpeg
+
+< ./http-files/sub_1.jpg
+--WebAppBoundary--
+
+### 모임 조회(커서 기반. 커서 없이 호출)
+GET http://localhost:10000/api/v1/groups?keyword=스터디&size=2
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 모임 조회(커서 기반)
+GET http://localhost:10000/api/v1/groups?keyword=스터디&cursor=9&size=2
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 모임 조회(커서 기반)
+GET http://localhost:10000/api/v1/groups?keyword=스터디&cursor=9&size=2
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
