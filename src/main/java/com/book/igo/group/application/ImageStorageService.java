@@ -1,10 +1,9 @@
 package com.book.igo.group.application;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +26,7 @@ public class ImageStorageService {
     @Value("${aws.s3.public-base-url}")
     private String publicBaseUrl;
 
-    public String uploadGroupImage(Long groupId, MultipartFile file, int index) {
+    public UploadedImage uploadGroupImage(Long groupId, MultipartFile file, int index) {
         String originalFilename = file.getOriginalFilename();
         String ext = "";
 
@@ -52,10 +51,23 @@ public class ImageStorageService {
 
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
         } catch (IOException e) {
-            // 나중에 AppException으로 교체해도 됨
             throw new RuntimeException("이미지 업로드 실패", e);
         }
 
-        return publicBaseUrl + "/" + key;
+        String url = publicBaseUrl + "/" + key;
+        return new UploadedImage(key, url);
+    }
+
+    public void deleteObject(String key) {
+        s3Client.deleteObject(builder -> builder.bucket(bucket).key(key));
+    }
+
+    public void deleteObjects(List<String> keys) {
+        for (String key : keys) {
+            deleteObject(key);
+        }
+    }
+
+    public record UploadedImage(String key, String url) {
     }
 }

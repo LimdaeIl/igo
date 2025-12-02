@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -55,7 +57,7 @@ public class GroupService {
                         principal.id()
                 ));
 
-        // 2) 비즈니스 검증 (시간, 인원 등)
+        // 2) 비즈니스 검증
         validateCreateRequest(request);
 
         // 3) Group 엔티티 생성 및 저장
@@ -71,16 +73,16 @@ public class GroupService {
         );
         groupRepository.save(group);
 
-        // 4) 이미지 저장
-        saveGroupImages(group, imageFiles);
-
-        // 5) 태그 저장 (요청 tags -> GroupTag)
+        // 4) 태그 저장
         saveGroupTags(group, request.tags());
 
-        // 6) 호스트를 모임 참가자로 등록 (HOST 역할)
+        // 5) 호스트를 모임 참가자로 등록 (HOST 역할)
         saveHostAsGroupUser(group, host);
 
-        // 7) 응답 DTO 변환
+        // 6) 이미지 업로드 + GroupImage 저장 (트랜잭션 안)
+        saveGroupImages(group, imageFiles);
+
+        // 7) 응답 DTO 변환 (이미 group.images 가 채워진 상태)
         return GetGroupResponse.from(group);
     }
 
@@ -94,6 +96,27 @@ public class GroupService {
         }
     }
 
+    // 롤백 시 S3 고아 파일 문제 해결
+    private void registerImageUploadAfterCommit(Group group, List<MultipartFile> imageFiles) {
+        if (imageFiles == null || imageFiles.isEmpty()) {
+            return;
+        }
+
+        // 현재 트랜잭션이 있을 때만 등록
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            // 혹시라도 트랜잭션 밖에서 호출되면 그냥 즉시 실행
+            saveGroupImages(group, imageFiles);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                // 트랜잭션 커밋이 성공한 뒤에만 호출됨
+                saveGroupImages(group, imageFiles);
+            }
+        });
+    }
 
     private void saveGroupImages(Group group, List<MultipartFile> imageFiles) {
         if (imageFiles == null || imageFiles.isEmpty()) {
@@ -101,23 +124,32 @@ public class GroupService {
         }
 
         List<GroupImage> entities = new ArrayList<>();
+        List<String> uploadedKeys = new ArrayList<>();
 
-        for (int i = 0; i < imageFiles.size(); i++) {
-            MultipartFile file = imageFiles.get(i);
-            if (file == null || file.isEmpty()) {
-                continue;
+        try {
+            for (int i = 0; i < imageFiles.size(); i++) {
+                MultipartFile file = imageFiles.get(i);
+                if (file == null || file.isEmpty()) {
+                    continue;
+                }
+
+                ImageStorageService.UploadedImage uploaded =
+                        imageStorageService.uploadGroupImage(group.getId(), file, i);
+
+                uploadedKeys.add(uploaded.key());
+
+                GroupImage image = GroupImage.create(group, uploaded.url(), i);
+                entities.add(image);
             }
 
-            // 1) S3(Lightsail) 업로드 → URL 획득
-            String imageUrl = imageStorageService.uploadGroupImage(group.getId(), file, i);
-
-            // 2) GroupImage 엔티티 생성
-            GroupImage image = GroupImage.create(group, imageUrl, i);
-            entities.add(image);
-        }
-
-        if (!entities.isEmpty()) {
-            groupImageRepository.saveAll(entities);
+            if (!entities.isEmpty()) {
+                groupImageRepository.saveAll(entities);
+            }
+        } catch (RuntimeException e) {
+            // 이미 올라간 이미지들 삭제 (보상)
+            imageStorageService.deleteObjects(uploadedKeys);
+            // 필요하면 logger로 에러 남기고
+            throw new GroupException(GroupErrorCode.IMAGE_UPLOAD_FAILED, e);
         }
     }
 
