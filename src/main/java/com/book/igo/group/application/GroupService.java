@@ -2,7 +2,9 @@ package com.book.igo.group.application;
 
 import com.book.igo.common.security.JwtUserPrincipal;
 import com.book.igo.group.application.dto.request.CreateGroupRequest;
+import com.book.igo.group.application.dto.response.GetGroupListResponse;
 import com.book.igo.group.application.dto.response.GetGroupResponse;
+import com.book.igo.group.application.dto.response.GroupListItemResponse;
 import com.book.igo.group.domain.entity.Group;
 import com.book.igo.group.domain.entity.GroupImage;
 import com.book.igo.group.domain.entity.GroupRole;
@@ -25,6 +27,9 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -47,7 +52,9 @@ public class GroupService {
 
 
     @Transactional
-    public GetGroupResponse create(JwtUserPrincipal principal, CreateGroupRequest request,
+    public GetGroupResponse create(
+            JwtUserPrincipal principal,
+            CreateGroupRequest request,
             List<MultipartFile> imageFiles) {
 
         // 1) 호스트 유저 조회
@@ -84,6 +91,33 @@ public class GroupService {
 
         // 7) 응답 DTO 변환 (이미 group.images 가 채워진 상태)
         return GetGroupResponse.from(group);
+    }
+
+    @Transactional(readOnly = true)
+    public GetGroupListResponse getVisibleGroups(String keyword, Long cursor, int size) {
+        // nextCursor 판별 위해 size+1 개 요청
+        Pageable pageable = PageRequest.of(
+                0,
+                size + 1,
+                Sort.by(Sort.Direction.DESC, "id")
+        );
+
+        List<Group> groups = groupRepository.searchVisibleGroups(keyword, cursor, pageable);
+
+        boolean hasNext = groups.size() > size;
+        Long nextCursor = null;
+
+        if (hasNext) {
+            Group last = groups.get(groups.size() - 1);
+            nextCursor = last.getId();
+            groups = groups.subList(0, size); // 응답에는 size 개만
+        }
+
+        List<GroupListItemResponse> items = groups.stream()
+                .map(GroupListItemResponse::from)
+                .toList();
+
+        return GetGroupListResponse.of(items, nextCursor);
     }
 
     private void validateCreateRequest(CreateGroupRequest request) {
