@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "v1_meeting_tags")
+@Table(name = "v1_group_tags")
 @Entity
 public class GroupTag extends BaseTimeEntity {
 

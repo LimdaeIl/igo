@@ -23,32 +23,6 @@ Content-Type: application/json
   client.global.set("refreshToken", response.body.data.refreshToken);
 %}
 
-### 모임 생성
-POST http://localhost:10000/api/v1/groups
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "title": "강남에서 하는 자바 스터디",
-  "location": "서울 강남구",
-  "locationDetail": "강남역 2번 출구 근처 카페",
-  "startTime": "2025-12-10T19:00:00",
-  "endTime": "2025-12-10T21:00:00",
-  "tags": [
-    "자바",
-    "백엔드",
-    "스터디"
-  ],
-  "description": "자바 백엔드 신입 준비하는 분들을 위한 스터디입니다.",
-  "maxParticipants": 10,
-  "images": [
-    "https://cdn.example.com/groups/201/main.jpg",
-    "https://cdn.example.com/groups/201/sub_1.jpg"
-  ]
-}
-
-
-
 ### 모임 생성 (이미지 업로드 포함)
 POST http://localhost:10000/api/v1/groups
 Authorization: Bearer {{accessToken}}
