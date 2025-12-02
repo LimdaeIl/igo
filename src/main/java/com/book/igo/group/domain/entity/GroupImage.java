@@ -33,4 +33,14 @@ public class GroupImage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
     private Group group;
+
+    public static GroupImage create(Group group, String imageUrl, int sortOrder) {
+        GroupImage image = new GroupImage();
+        image.group = group;
+        image.imageUrl = imageUrl;
+        image.sortOrder = sortOrder;
+        group.addImage(image);
+        return image;
+    }
+
 }

@@ -46,4 +46,13 @@ public class GroupUser extends BaseTimeEntity {
     @Column(name = "left_at")
     private LocalDateTime leftAt;
 
+    public static GroupUser create(Group group, User user, GroupRole role) {
+        GroupUser groupUser = new GroupUser();
+        groupUser.group = group;
+        groupUser.user = user;
+        groupUser.groupRole = role;
+        groupUser.joinedAt = LocalDateTime.now();
+        group.addUser(groupUser);
+        return groupUser;
+    }
 }
