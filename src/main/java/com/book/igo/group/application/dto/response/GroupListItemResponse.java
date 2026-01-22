@@ -43,7 +43,7 @@ public record GroupListItemResponse(
                 .filter(gu -> gu.getLeftAt() == null)
                 .count();
 
-        int participantCount = joinedCount; // 지금은 joinedCount와 동일하게 사용
+        int participantCount = joinedCount; // 지금은 participantCount(참가자 수), joinedCount(참여 횟수)와 동일하게 사용
 
         return new GroupListItemResponse(
                 group.getId(),

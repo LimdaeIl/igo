@@ -30,7 +30,6 @@ public class GroupController {
 
     private final GroupService groupService;
 
-
     @PreAuthorize("hasRole('USER')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<GetGroupResponse>> createGroup(
